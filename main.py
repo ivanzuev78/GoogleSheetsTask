@@ -18,14 +18,12 @@ def main():
     current_exchange_ratio = get_exchange_ratio("USD")
     ratio_updated_time = datetime.datetime.now()
     while True:
-        print('Старт обновления данных')
         logging.debug(f"Старт обновления данных")
         if (
             datetime.datetime.now() - ratio_updated_time
         ).seconds > exchange_rate_update_sec:
             current_exchange_ratio = get_exchange_ratio("USD")
             ratio_updated_time = datetime.datetime.now()
-            print('курс доллара обновлен')
             logging.info(f"курс доллара обновлен: {current_exchange_ratio}")
         data = parse_orders_from_sheet(get_data_from_google_sheet(GOOGLE_SHEET_NAME))
         update_data(data, current_exchange_ratio)
