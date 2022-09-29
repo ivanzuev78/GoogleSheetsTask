@@ -1,8 +1,9 @@
-from typing import List
+from typing import List, Dict
 
 from sqlalchemy import Column, Date, Float, Integer
 from sqlalchemy_utils import create_database, database_exists
 
+from config import order_numb_col, id_col, cost_usd_col, delivery_date_col
 from database import Base, Session
 
 
@@ -21,30 +22,34 @@ def create_db(engine):
     Base.metadata.create_all(engine)
 
 
-def update_data(data: List[List], usd_rub: float):
+def update_data(google_data: Dict[int, List], usd_rub: float):
     with Session() as session:
-        all_orders_numbs = set(d[1] for d in data)
+        all_orders_numbs = set(google_data.keys())
+
+        # Ищем записи для обновления
         orders_to_update_query = session.query(Order).filter(
             Order.order_numb.in_(all_orders_numbs)
         )
         orders_to_update = orders_to_update_query.all()
         orders_to_update_numbs = {order.order_numb for order in orders_to_update}
+        update_values(orders_to_update, google_data, usd_rub)
 
+        # Добавляем новые записи в БД
+        new_orders_numbs = all_orders_numbs - orders_to_update_numbs
+        create_new_orders(
+            session, [row for order_numb, row in google_data.items() if order_numb in new_orders_numbs], usd_rub
+        )
+
+        # Удаляем удаленные записи из БД, которых нет в Гугл таблицах
         orders_to_delete_query = session.query(Order).filter(
             Order.order_numb.not_in(all_orders_numbs)
         )
         orders_to_delete_query.delete()
 
-        new_orders_numbs = all_orders_numbs - orders_to_update_numbs
-
-        create_new_orders(
-            session, [row for row in data if row[1] in new_orders_numbs], usd_rub
-        )
-
         session.commit()
 
 
-def create_new_orders(session, data: List[List], usd_rub):
+def create_new_orders(session, data: List[List], usd_rub: float):
     for order in data:
         id_, ord_numb, cost_usd, date = order
         cost_rub = int(cost_usd) * usd_rub
@@ -57,3 +62,17 @@ def create_new_orders(session, data: List[List], usd_rub):
             cost_rub=cost_rub,
         )
         session.add(order)
+
+
+def update_values(db_data: List[Order], google_data_dict: Dict[int, List], usd_rub: float):
+
+    for order in db_data:
+        google_order = google_data_dict[int(order.order_numb)]
+        if order.id != google_order[id_col]:
+            order.id = google_order[id_col]
+        if order.cost_usd != google_order[cost_usd_col]:
+            order.cost_usd = google_order[cost_usd_col]
+        if order.delivery_date != google_order[delivery_date_col]:
+            order.delivery_date = google_order[delivery_date_col]
+        if order.cost_rub != order.cost_usd * usd_rub:
+            order.cost_rub = order.cost_usd * usd_rub

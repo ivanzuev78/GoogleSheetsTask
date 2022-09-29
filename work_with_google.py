@@ -4,7 +4,7 @@ from typing import List
 
 import gspread
 
-from config import PATH_TO_CREDENTIALS, order_numb_col, cost_usd_col, delivery_date_col
+from config import PATH_TO_CREDENTIALS, order_numb_col, cost_usd_col, delivery_date_col, id_col
 
 
 def get_data_from_google_sheet(sheet_name: str, credentials: str = PATH_TO_CREDENTIALS):
@@ -28,16 +28,17 @@ def validate_and_process_order(order: List):
     :return:
     """
     try:
+        order[id_col] = int(order[id_col])
         order[order_numb_col] = int(order[order_numb_col])
         order[cost_usd_col] = float(order[cost_usd_col])
         order[delivery_date_col] = datetime.datetime.strptime(
             order[delivery_date_col], "%d.%m.%Y"
-        )
+        ).date()
         return True
     except ValueError:
-        logging.debug(f"Невалидная запись: {order}")
+        logging.warning(f"Невалидная запись: {order}")
         return False
 
 
 def parse_orders_from_sheet(raw_data):
-    return list(filter(validate_and_process_order, raw_data[1:]))
+    return {data[order_numb_col]: data for data in filter(validate_and_process_order, raw_data)}
