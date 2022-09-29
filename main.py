@@ -1,34 +1,23 @@
-import datetime
-import time
-import logging
+import asyncio
 
-from config import (
-    GOOGLE_SHEET_NAME,
-    exchange_rate_update_sec,
-    refresh_time_sec,
-)
 from database import engine
-from db_schema import create_db, update_data
-from exchange import get_exchange_ratio
-from work_with_google import parse_orders_from_sheet, get_data_from_google_sheet
+from db_schema import create_db
+from exchange import ExchangeRatio
+from telegram_api import bot
+from transfer_data import transfer_google_sheet
 
 
 def main():
     create_db(engine)
-    current_exchange_ratio = get_exchange_ratio("USD")
-    ratio_updated_time = datetime.datetime.now()
-    while True:
-        logging.debug(f"Старт обновления данных")
-        if (
-            datetime.datetime.now() - ratio_updated_time
-        ).seconds > exchange_rate_update_sec:
-            current_exchange_ratio = get_exchange_ratio("USD")
-            ratio_updated_time = datetime.datetime.now()
-            logging.info(f"курс доллара обновлен: {current_exchange_ratio}")
-        data = parse_orders_from_sheet(get_data_from_google_sheet(GOOGLE_SHEET_NAME))
-        update_data(data, current_exchange_ratio)
-        logging.debug(f"Окончание обновления данных")
-        time.sleep(refresh_time_sec)
+    usd_rub = ExchangeRatio("USD")
+
+    loop = asyncio.new_event_loop()
+    loop.create_task(
+        usd_rub.update_exchange_ratio_task()
+    )  # Регулярное обновление курса валют
+    loop.create_task(transfer_google_sheet(usd_rub))  # Копирование таблицы в БД
+    loop.create_task(bot.polling())  # Телеграм бот
+    loop.run_forever()
 
 
 if __name__ == "__main__":

@@ -6,10 +6,10 @@ import gspread
 
 from config import (
     PATH_TO_CREDENTIALS,
-    order_numb_col,
     cost_usd_col,
     delivery_date_col,
     id_col,
+    order_numb_col,
 )
 
 
@@ -17,7 +17,7 @@ def get_data_from_google_sheet(sheet_name: str, credentials: str = PATH_TO_CREDE
     """
     Получаем данные с Google таблиц
     :param sheet_name: Наименование таблицы
-    :param credentials:
+    :param credentials: файл с данными для подключения к Google Sheet
     :return:
     """
     gspread_account = gspread.service_account(filename=credentials)
@@ -30,8 +30,6 @@ def validate_and_process_order(order: List):
     """
     Проводим валидацию записи.
     Если запись валидна, то сразу же происходит обработка за счёт side effect
-    :param order:
-    :return:
     """
     try:
         order[id_col] = int(order[id_col])
@@ -47,6 +45,7 @@ def validate_and_process_order(order: List):
 
 
 def parse_orders_from_sheet(raw_data):
+    # TODO Можно обернуть в класс для удобства
     return {
         data[order_numb_col]: data
         for data in filter(validate_and_process_order, raw_data)
