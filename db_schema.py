@@ -1,10 +1,10 @@
 from typing import List, Dict
 
-from sqlalchemy import Column, Date, Float, Integer
+from sqlalchemy import Column, Date, Float, Integer, String, Boolean
 from sqlalchemy_utils import create_database, database_exists
 
 from config import order_numb_col, id_col, cost_usd_col, delivery_date_col
-from database import Base, Session
+from database import Base, Session, engine
 
 
 class Order(Base):
@@ -14,6 +14,15 @@ class Order(Base):
     cost_usd = Column(Float)
     delivery_date = Column(Date)
     cost_rub = Column(Float)
+    notify_sent = Column(Boolean, default=False)
+
+
+class TelegramUser(Base):
+    __tablename__ = "notification_users"
+    user_id = Column(Integer, primary_key=True)
+    first_name = Column(String)
+    last_name = Column(String)
+    username = Column(String)
 
 
 def create_db(engine):
@@ -66,7 +75,6 @@ def create_new_orders(session, data: List[List], usd_rub: float):
 
 
 def update_values(db_data: List[Order], google_data_dict: Dict[int, List], usd_rub: float):
-
     for order in db_data:
         google_order = google_data_dict[int(order.order_numb)]
         if order.id != google_order[id_col]:
@@ -77,3 +85,6 @@ def update_values(db_data: List[Order], google_data_dict: Dict[int, List], usd_r
             order.delivery_date = google_order[delivery_date_col]
         if order.cost_rub != order.cost_usd * usd_rub:
             order.cost_rub = order.cost_usd * usd_rub
+
+if __name__ == '__main__':
+    create_db(engine)
