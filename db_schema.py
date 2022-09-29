@@ -50,18 +50,19 @@ def update_data(google_data: Dict[int, List], usd_rub: float):
 
 
 def create_new_orders(session, data: List[List], usd_rub: float):
-    for order in data:
-        id_, ord_numb, cost_usd, date = order
-        cost_rub = int(cost_usd) * usd_rub
+    orders = []
 
+    for order in data:
         order = Order(
-            id=id_,
-            order_numb=ord_numb,
-            cost_usd=cost_usd,
-            delivery_date=date,
-            cost_rub=cost_rub,
+            id=order[id_col],
+            order_numb=order[order_numb_col],
+            cost_usd=order[cost_usd_col],
+            delivery_date=order[delivery_date_col],
+            cost_rub=order[cost_usd_col] * usd_rub,
         )
-        session.add(order)
+        orders.append(order)
+
+    session.add_all(orders)
 
 
 def update_values(db_data: List[Order], google_data_dict: Dict[int, List], usd_rub: float):
