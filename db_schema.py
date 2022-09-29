@@ -3,7 +3,7 @@ from typing import List
 from sqlalchemy import Column, Date, Float, Integer
 from sqlalchemy_utils import create_database, database_exists
 
-from database import Base, Session, engine
+from database import Base, Session
 
 
 class Order(Base):
@@ -57,7 +57,3 @@ def create_new_orders(session, data: List[List], usd_rub):
             cost_rub=cost_rub,
         )
         session.add(order)
-
-
-if __name__ == "__main__":
-    create_db(engine)
