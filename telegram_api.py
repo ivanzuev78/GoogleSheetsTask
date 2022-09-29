@@ -5,8 +5,8 @@ from typing import List
 from telebot.async_telebot import AsyncTeleBot
 
 from config import telegram_token
-from database import Session
-from db_schema import TelegramUser
+from database import Session, TelegramUser
+
 
 bot = AsyncTeleBot(telegram_token)
 

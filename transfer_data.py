@@ -11,8 +11,7 @@ from config import (
     order_numb_col,
     refresh_time_sec,
 )
-from database import Session
-from db_schema import Order
+from database import Session, Order
 from exchange import ExchangeRatio
 from telegram_api import send_notify
 from work_with_google import get_data_from_google_sheet, parse_orders_from_sheet
