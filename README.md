@@ -1,6 +1,6 @@
 # GoogleSheetsTask
 
-Запуск проекта. 
+Запуск проекта:
 
 1. Прописать путь к файлу с авторизации Google (credentials.json) и токен Telegram (config\settings.ini)
 2. Прописать путь к БД
