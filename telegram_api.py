@@ -62,4 +62,3 @@ if __name__ == '__main__':
     loop = asyncio.new_event_loop()
     loop.create_task(bot.polling())
     loop.run_forever()
-    print('sadf')
