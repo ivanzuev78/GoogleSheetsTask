@@ -4,7 +4,13 @@ from typing import List
 
 import gspread
 
-from config import PATH_TO_CREDENTIALS, order_numb_col, cost_usd_col, delivery_date_col, id_col
+from config import (
+    PATH_TO_CREDENTIALS,
+    order_numb_col,
+    cost_usd_col,
+    delivery_date_col,
+    id_col,
+)
 
 
 def get_data_from_google_sheet(sheet_name: str, credentials: str = PATH_TO_CREDENTIALS):
@@ -41,4 +47,7 @@ def validate_and_process_order(order: List):
 
 
 def parse_orders_from_sheet(raw_data):
-    return {data[order_numb_col]: data for data in filter(validate_and_process_order, raw_data)}
+    return {
+        data[order_numb_col]: data
+        for data in filter(validate_and_process_order, raw_data)
+    }

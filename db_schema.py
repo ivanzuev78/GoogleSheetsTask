@@ -46,7 +46,13 @@ def update_data(google_data: Dict[int, List], usd_rub: float):
         # Добавляем новые записи в БД
         new_orders_numbs = all_orders_numbs - orders_to_update_numbs
         create_new_orders(
-            session, [row for order_numb, row in google_data.items() if order_numb in new_orders_numbs], usd_rub
+            session,
+            [
+                row
+                for order_numb, row in google_data.items()
+                if order_numb in new_orders_numbs
+            ],
+            usd_rub,
         )
 
         # Удаляем удаленные записи из БД, которых нет в Гугл таблицах
@@ -74,7 +80,9 @@ def create_new_orders(session, data: List[List], usd_rub: float):
     session.add_all(orders)
 
 
-def update_values(db_data: List[Order], google_data_dict: Dict[int, List], usd_rub: float):
+def update_values(
+    db_data: List[Order], google_data_dict: Dict[int, List], usd_rub: float
+):
     for order in db_data:
         google_order = google_data_dict[int(order.order_numb)]
         if order.id != google_order[id_col]:
@@ -86,5 +94,6 @@ def update_values(db_data: List[Order], google_data_dict: Dict[int, List], usd_r
         if order.cost_rub != order.cost_usd * usd_rub:
             order.cost_rub = order.cost_usd * usd_rub
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     create_db(engine)

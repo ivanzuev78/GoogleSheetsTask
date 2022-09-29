@@ -8,14 +8,14 @@ from db_schema import TelegramUser
 
 bot = AsyncTeleBot(telegram_token)
 
-SUBSCRIBE_SUCCESSFUL = 'Вы успешно подписались на бесполезную рассылку'
-ALREADY_SUBSCRIBED = 'Вы уже подписаны'
+SUBSCRIBE_SUCCESSFUL = "Вы успешно подписались на бесполезную рассылку"
+ALREADY_SUBSCRIBED = "Вы уже подписаны"
 
-UNSUBSCRIBE_SUCCESSFUL = 'Вы успешно отписались от бесполезной рассылки'
-ALREADY_UNSUBSCRIBED = 'Вы не были подписаны'
+UNSUBSCRIBE_SUCCESSFUL = "Вы успешно отписались от бесполезной рассылки"
+ALREADY_UNSUBSCRIBED = "Вы не были подписаны"
 
 
-@bot.message_handler(commands=['start'])
+@bot.message_handler(commands=["start"])
 async def subscribe(message):
     user = message.from_user
     user_id = user.id
@@ -41,7 +41,7 @@ async def subscribe(message):
         await bot.send_message(chat_id=user_id, text=text)
 
 
-@bot.message_handler(commands=['stop'])
+@bot.message_handler(commands=["stop"])
 async def unsubscribe(message):
     user = message.from_user
     user_id = user.id
@@ -54,10 +54,12 @@ async def unsubscribe(message):
         user_from_db.delete()
         session.commit()
 
-    await bot.send_message(chat_id=user_id, text=UNSUBSCRIBE_SUCCESSFUL if users else ALREADY_UNSUBSCRIBED)
+    await bot.send_message(
+        chat_id=user_id, text=UNSUBSCRIBE_SUCCESSFUL if users else ALREADY_UNSUBSCRIBED
+    )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Для проверки подписки на бота
     loop = asyncio.new_event_loop()
     loop.create_task(bot.polling())
