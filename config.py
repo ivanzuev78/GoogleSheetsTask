@@ -2,7 +2,7 @@ import configparser
 import logging
 
 config = configparser.ConfigParser()
-config.read(r"config\settings.ini")
+config.read(r"config/settings.ini")
 
 GOOGLE_SHEET_NAME = config["DEFAULT"]["google_sheet_name"]
 PATH_TO_CREDENTIALS = config["DEFAULT"]["path_to_credentials"]
