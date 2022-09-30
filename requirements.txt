@@ -5,3 +5,4 @@ gspread
 pandas
 lxml
 aiohttp
+pytelegrambotapi
