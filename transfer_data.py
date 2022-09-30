@@ -27,14 +27,13 @@ async def save_data_to_db(google_data: Dict[int, List], usd_rub: ExchangeRatio):
         all_orders_numbs = set(google_data.keys())
 
         # Ищем записи для обновления
-        orders_to_update_query = session.query(Order).filter(
+        orders_to_update = session.query(Order).filter(
             Order.order_numb.in_(all_orders_numbs)
-        )
-        orders_to_update = orders_to_update_query.all()
-        orders_to_update_numbs = {order.order_numb for order in orders_to_update}
+        ).all()
         update_orders(orders_to_update, google_data, usd_rub)
 
         # Добавляем новые записи в БД
+        orders_to_update_numbs = {order.order_numb for order in orders_to_update}
         new_orders_numbs = all_orders_numbs - orders_to_update_numbs
         new_orders = create_new_orders(
             session,
@@ -47,15 +46,19 @@ async def save_data_to_db(google_data: Dict[int, List], usd_rub: ExchangeRatio):
         )
 
         # Удаляем удаленные записи из БД, которых нет в Гугл таблицах
-        orders_to_delete_query = session.query(Order).filter(
-            Order.order_numb.not_in(all_orders_numbs)
-        )
-        orders_to_delete_query.delete()
+        delete_orders(all_orders_numbs, session)
 
         # Посылаем уведомления по просроченным заказам
         await check_delivery_deadline(new_orders + orders_to_update)
 
         session.commit()
+
+
+def delete_orders(all_orders_numbs, session):
+    orders_to_delete_query = session.query(Order).filter(
+        Order.order_numb.not_in(all_orders_numbs)
+    )
+    orders_to_delete_query.delete()
 
 
 def create_new_orders(session, data: List[List], usd_rub: ExchangeRatio):
