@@ -1,6 +1,6 @@
 import asyncio
 
-from database import engine, create_db
+from database import create_db, engine
 from exchange import ExchangeRatio
 from telegram_api import bot
 from transfer_data import transfer_google_sheet
