@@ -1,6 +1,6 @@
 import datetime
 import logging
-from typing import List
+from typing import List, Optional
 
 import gspread
 
@@ -11,6 +11,7 @@ from config import (
     id_col,
     order_numb_col,
 )
+from database import Order
 
 
 def get_data_from_google_sheet(sheet_name: str, credentials: str = PATH_TO_CREDENTIALS):
@@ -26,27 +27,28 @@ def get_data_from_google_sheet(sheet_name: str, credentials: str = PATH_TO_CREDE
     return ws.get_values()
 
 
-def validate_and_process_order(order: List):
+def validate_and_process_order(row: List) -> Optional[Order]:
     """
-    Проводим валидацию записи.
-    Если запись валидна, то сразу же происходит обработка за счёт side effect
+    Проводим валидацию записи и обработку записи
     """
+
     try:
-        order[id_col] = int(order[id_col])
-        order[order_numb_col] = int(order[order_numb_col])
-        order[cost_usd_col] = float(order[cost_usd_col])
-        order[delivery_date_col] = datetime.datetime.strptime(
-            order[delivery_date_col], "%d.%m.%Y"
-        ).date()
-        return True
+        return Order(
+            id=int(row[id_col]),
+            order_numb=int(row[order_numb_col]),
+            cost_usd=float(row[cost_usd_col]),
+            delivery_date=datetime.datetime.strptime(
+                row[delivery_date_col], "%d.%m.%Y"
+            ).date(),
+        )
+
     except ValueError:
-        logging.warning(f"Невалидная запись: {order}")
-        return False
+        logging.warning(f"Невалидная запись: {row}")
+        return None
 
 
 def parse_orders_from_sheet(raw_data):
-    # TODO Можно обернуть в класс для удобства
     return {
-        data[order_numb_col]: data
-        for data in filter(validate_and_process_order, raw_data)
+        data.order_numb: data
+        for data in filter(bool, map(validate_and_process_order, raw_data[1:]))
     }

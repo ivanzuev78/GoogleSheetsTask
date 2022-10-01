@@ -3,21 +3,14 @@ import logging
 from asyncio import sleep
 from typing import Dict, List
 
-from config import (
-    GOOGLE_SHEET_NAME,
-    cost_usd_col,
-    delivery_date_col,
-    id_col,
-    order_numb_col,
-    refresh_time_sec,
-)
-from database import Session, Order
+from config import GOOGLE_SHEET_NAME, refresh_time_sec
+from database import Order, Session
 from exchange import ExchangeRatio
 from telegram_api import send_notify
 from work_with_google import get_data_from_google_sheet, parse_orders_from_sheet
 
 
-async def save_data_to_db(google_data: Dict[int, List], usd_rub: ExchangeRatio):
+async def save_data_to_db(google_data: Dict[int, Order], usd_rub: ExchangeRatio):
     """
     Сохранение данных в БД и отправка уведомлений
     :param google_data: Обработанные данные с Гугл таблицы
@@ -27,9 +20,9 @@ async def save_data_to_db(google_data: Dict[int, List], usd_rub: ExchangeRatio):
         all_orders_numbs = set(google_data.keys())
 
         # Ищем записи для обновления
-        orders_to_update = session.query(Order).filter(
-            Order.order_numb.in_(all_orders_numbs)
-        ).all()
+        orders_to_update = (
+            session.query(Order).filter(Order.order_numb.in_(all_orders_numbs)).all()
+        )
         update_orders(orders_to_update, google_data, usd_rub)
 
         # Добавляем новые записи в БД
@@ -61,7 +54,7 @@ def delete_orders(all_orders_numbs, session):
     orders_to_delete_query.delete()
 
 
-def create_new_orders(session, data: List[List], usd_rub: ExchangeRatio):
+def create_new_orders(session, data: List[Order], usd_rub: ExchangeRatio):
     """
     Сохранение в БД новых заявок
     :param session: сессия БД
@@ -71,13 +64,7 @@ def create_new_orders(session, data: List[List], usd_rub: ExchangeRatio):
     new_orders = []
 
     for order in data:
-        order = Order(
-            id=order[id_col],
-            order_numb=order[order_numb_col],
-            cost_usd=order[cost_usd_col],
-            delivery_date=order[delivery_date_col],
-            cost_rub=order[cost_usd_col] * usd_rub.ratio,
-        )
+        order.cost_rub = order.cost_usd * usd_rub.ratio
         new_orders.append(order)
 
     session.add_all(new_orders)
@@ -85,26 +72,25 @@ def create_new_orders(session, data: List[List], usd_rub: ExchangeRatio):
 
 
 def update_orders(
-    db_data: List[Order], google_data_dict: Dict[int, List], usd_rub: ExchangeRatio
+    db_data: List[Order], google_data_dict: Dict[int, Order], usd_rub: ExchangeRatio
 ):
     """
-
     :param db_data:
     :param google_data_dict: Заказы в виде словаря. Ключ - номер заказа, значение - данные заказа
     :param usd_rub: Контейнер с курсом валюты
     """
     for order in db_data:
         google_order = google_data_dict[order.order_numb]
-        if order.id != google_order[id_col]:
-            order.id = google_order[id_col]
-        if order.cost_usd != google_order[cost_usd_col]:
-            order.cost_usd = google_order[cost_usd_col]
-        if order.delivery_date != google_order[delivery_date_col]:
-            order.delivery_date = google_order[delivery_date_col]
+        if order.id != google_order.id:
+            order.id = google_order.id
+        if order.cost_usd != google_order.cost_usd:
+            order.cost_usd = google_order.cost_usd
+        if order.delivery_date != google_order.delivery_date:
+            order.delivery_date = google_order.delivery_date
             # Если дата стала подходящей для уведомления, то нужно будет уведомить в будущем
             if (
                 order.notify_sent
-                and google_order[delivery_date_col] >= datetime.datetime.now().date()
+                and google_order.delivery_date >= datetime.datetime.now().date()
             ):
                 order.notify_sent = False
         cost_rub = order.cost_usd * usd_rub.ratio
